@@ -159,6 +159,7 @@ public class AppContext : ApplicationContext
 
     public void ShowDashboard()
     {
+        _dashboard.EnsurePositioned();
         _dashboard.Show();
         _dashboard.BringToFront();
         _dashboard.Activate();

@@ -249,7 +249,12 @@ public class DashboardForm : Form
         Controls.Add(_cardContainer);
         Controls.Add(_footerPanel);
         Controls.Add(_headerPanel);
+
+        // Pre-position snugly to bottom-right corner before first display
+        PositionNearTray();
     }
+
+    private bool _hasCustomPosition;
 
     private void ApplyNativeWindows11Styling()
     {
@@ -304,6 +309,7 @@ public class DashboardForm : Form
     {
         if (e.Button == MouseButtons.Left)
         {
+            _hasCustomPosition = true;
             ReleaseCapture();
             SendMessage(Handle, WM_NCLBUTTONDOWN, (IntPtr)HTCAPTION, IntPtr.Zero);
         }
@@ -329,8 +335,16 @@ public class DashboardForm : Form
         var workingArea = Screen.PrimaryScreen?.WorkingArea ?? Screen.GetWorkingArea(this);
         int maxHeight = (int)(workingArea.Height * 0.90);
 
+        int oldBottom = Bottom;
         Height = Math.Min(desiredHeight, maxHeight);
-        PositionNearTray();
+        if (!_hasCustomPosition)
+        {
+            PositionNearTray();
+        }
+        else
+        {
+            Top = oldBottom - Height;
+        }
 
         ResumeLayout(true);
         Invalidate(true);
@@ -400,10 +414,20 @@ public class DashboardForm : Form
     public void PositionNearTray()
     {
         var workingArea = Screen.PrimaryScreen?.WorkingArea ?? Screen.GetWorkingArea(this);
-        int margin = 16;
-        int x = workingArea.Right - Width - margin;
-        int y = workingArea.Bottom - Height - margin;
+        // Snug to the bottom-right taskbar corner (6px margin)
+        const int marginX = 6;
+        const int marginY = 6;
+        int x = workingArea.Right - Width - marginX;
+        int y = workingArea.Bottom - Height - marginY;
         Location = new Point(x, y);
+    }
+
+    public void EnsurePositioned()
+    {
+        if (!_hasCustomPosition)
+        {
+            PositionNearTray();
+        }
     }
 
     public void ToggleVisibility()
@@ -414,6 +438,7 @@ public class DashboardForm : Form
         }
         else
         {
+            EnsurePositioned();
             AdjustHeightToContent();
             Show();
             BringToFront();
