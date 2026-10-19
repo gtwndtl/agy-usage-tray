@@ -79,7 +79,7 @@ public class AppContext : ApplicationContext
         _trayIcon = new NotifyIcon
         {
             Icon = CreateAppIcon(Color.FromArgb(56, 189, 248)), // Cyan/Sky
-            Text = "Antigravity Quota: Initializing...",
+            Text = "Antigravity HUD: Initializing...",
             ContextMenuStrip = _trayMenu,
             Visible = true
         };
@@ -215,7 +215,7 @@ public class AppContext : ApplicationContext
 
         if (data?.Command?.Data?.Groups == null)
         {
-            SetTrayTooltip("AGY Quota: No data");
+            SetTrayTooltip("Antigravity HUD: No data");
             return;
         }
 
@@ -259,7 +259,7 @@ public class AppContext : ApplicationContext
             }
         }
 
-        var lines = new List<string> { "AGY Quota:" };
+        var lines = new List<string> { "Antigravity HUD:" };
         if (!string.IsNullOrEmpty(geminiInfo)) lines.Add(geminiInfo);
         if (!string.IsNullOrEmpty(claudeInfo)) lines.Add(claudeInfo);
         if (!string.IsNullOrEmpty(argonInfo)) lines.Add(argonInfo);

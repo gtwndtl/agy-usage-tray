@@ -8,6 +8,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <NoWarn>$(NoWarn);WFO1000</NoWarn>
     <ApplicationIcon>app.ico</ApplicationIcon>
+    <AssemblyName>AntigravityHUD</AssemblyName>
+    <Product>Antigravity HUD</Product>
+    <AssemblyTitle>Antigravity HUD</AssemblyTitle>
+    <Description>Lightweight Apple-style Windows System Tray and Floating HUD for Google Antigravity quotas.</Description>
   </PropertyGroup>
 
   <ItemGroup>

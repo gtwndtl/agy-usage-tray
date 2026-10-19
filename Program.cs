@@ -2,7 +2,7 @@ namespace AgyUsageTray;
 
 internal static class Program
 {
-    private const string MutexName = "AgyUsageTray_SingleInstance_Mutex";
+    private const string MutexName = "AntigravityHUD_SingleInstance_Mutex";
 
     [STAThread]
     static void Main()

@@ -12,14 +12,15 @@ public class HudSettings
     public double Opacity { get; set; } = 0.94;
     public bool TopMost { get; set; } = true;
 
-    private const string RegSubKey = @"Software\AgyUsageTray";
+    private const string RegSubKey = @"Software\AntigravityHUD";
+    private const string LegacyRegSubKey = @"Software\AgyUsageTray";
 
     public static HudSettings Load()
     {
         var settings = new HudSettings();
         try
         {
-            using var key = Registry.CurrentUser.OpenSubKey(RegSubKey);
+            using var key = Registry.CurrentUser.OpenSubKey(RegSubKey) ?? Registry.CurrentUser.OpenSubKey(LegacyRegSubKey);
             if (key != null)
             {
                 settings.ShowGemini5h = Convert.ToInt32(key.GetValue("Hud_Gemini5h", 1)) == 1;

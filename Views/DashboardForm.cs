@@ -60,6 +60,7 @@ public class DashboardForm : Form
         BackColor = ContentBg;
         ForeColor = Color.White;
         Font = new Font("Segoe UI Variable Text", 9f);
+        Text = "Antigravity HUD";
         KeyPreview = true;
 
         ApplyNativeWindows11Styling();
@@ -86,7 +87,7 @@ public class DashboardForm : Form
 
         _lblTitle = new Label
         {
-            Text = "Antigravity",
+            Text = "Antigravity HUD",
             Font = new Font("Segoe UI Variable Display", 11f, FontStyle.Bold),
             ForeColor = Color.FromArgb(244, 244, 245),
             BackColor = HeaderBg,

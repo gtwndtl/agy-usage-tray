@@ -53,6 +53,7 @@ public class FloatBarForm : Form
         StartPosition = FormStartPosition.Manual;
         TopMost = _settings.TopMost;
         Height = 32;
+        Text = "Antigravity HUD";
         BackColor = Color.FromArgb(20, 20, 24); // Frosted Dark Slate #141418
         ForeColor = Color.White;
         Font = new Font("Segoe UI Variable Text", 8.25f);

@@ -4,7 +4,8 @@ namespace AgyUsageTray.Services;
 
 public static class StartupService
 {
-    private const string AppName = "AgyUsageTray";
+    private const string AppName = "AntigravityHUD";
+    private const string LegacyAppName = "AgyUsageTray";
     private const string RunKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
 
     public static bool IsRunOnStartup()
@@ -12,7 +13,7 @@ public static class StartupService
         try
         {
             using var key = Registry.CurrentUser.OpenSubKey(RunKeyPath, false);
-            return key?.GetValue(AppName) != null;
+            return key?.GetValue(AppName) != null || key?.GetValue(LegacyAppName) != null;
         }
         catch
         {
@@ -32,6 +33,7 @@ public static class StartupService
                 var exePath = Environment.ProcessPath;
                 if (!string.IsNullOrEmpty(exePath))
                 {
+                    key.DeleteValue(LegacyAppName, false);
                     key.SetValue(AppName, $"\"{exePath}\"");
                     return true;
                 }
@@ -39,6 +41,7 @@ public static class StartupService
             else
             {
                 key.DeleteValue(AppName, false);
+                key.DeleteValue(LegacyAppName, false);
                 return true;
             }
         }

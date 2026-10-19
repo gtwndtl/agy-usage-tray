@@ -29,8 +29,8 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: publish/AgyUsageTray.exe
-          name: Antigravity Usage Tray ${{ github.ref_name }}
+          files: publish/AntigravityHUD.exe
+          name: Antigravity HUD ${{ github.ref_name }}
           draft: false
           prerelease: false
           generate_release_notes: true

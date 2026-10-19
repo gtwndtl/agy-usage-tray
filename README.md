@@ -1,32 +1,41 @@
-# Antigravity Usage Tray (Windows)
+# Antigravity HUD (Windows)
 
-โปรแกรมตรวจสอบ Quota และ Usage ของ Google Antigravity (`agy`) บน Windows โดยย่อการทำงานไว้ที่ System Tray (Taskbar Notification Area)
+A modern, lightweight Windows System Tray & Floating HUD Monitor for Google Antigravity (`agy`) Quotas and Usage.
 
-## ฟีเจอร์หลัก
-1. **System Tray Icon (Taskbar)**:
-   - ไอคอนสถานะที่มุมขวาล่างของหน้าจอ
-   - เปลี่ยนสีตามระดับโควตาต่ำสุด (ฟ้า/เขียว = ปกติ, ส้ม = ต่ำกว่า 50%, แดง = ต่ำกว่า 20%)
-2. **Hover Tooltip**:
-   - เมื่อเอาเมาส์ชี้ที่ไอคอน จะแสดงสรุปเปอร์เซ็นต์โควตาคงเหลือทันที:
-     ```text
-     AGY Quota:
-     Gemini: 91%(5h) / 97%(Wk)
-     Claude: 100%(5h) / 53%(Wk)
-     Argon: 100%
-     ```
-3. **Pop-up Dashboard (คลิกซ้าย)**:
-   - หน้าต่าง Flyout ทรงโมเดิร์น (สไตล์ Windows 11 Dark Mode) ลอยขึ้นเหนือ Taskbar
-   - แสดงการ์ดแยกตามกลุ่มโมเดล (Gemini Models, Claude & GPT Models, Gemini 4 Argon)
-   - มี Progress Bar สีตามระดับโควตา, เปอร์เซ็นต์, และเวลานับถอยหลังก่อนรีเซ็ต (เช่น `Resets in 3h 22m`)
-   - ปุ่ม **↻ Refresh** เพื่อดึงข้อมูลล่าสุดทันที
-   - ตัวเลือกตั้งเวลา Auto-refresh (5 นาที, 10 นาที, 15 นาที, 30 นาที, 1 ชั่วโมง, หรือ Manual)
-   - ตัวเลือก **Start on boot** เพื่อให้เปิดอัตโนมัติพร้อม Windows
-4. **Context Menu (คลิกขวา)**:
-   - Open Dashboard
-   - Refresh Now
-   - Auto-Refresh Interval
-   - Start with Windows
-   - Exit
+---
 
-## วิธีเปิดใช้งาน
-- ดับเบิ้ลคลิกไฟล์ `run.bat` หรือเปิดไฟล์ `publish\AgyUsageTray.exe`
+## ✨ Features
+
+### 1. 💻 Floating Mini HUD Bar (Developer Mode)
+- **Compact & Horizontal (32px)**: Designed specifically for programmers to glance at quota in real-time without obscuring code or IDEs.
+- **Customizable Metric Visibility**: Right-click to show/hide specific models and windows (`Gemini 5h/Wk`, `Claude 5h/Wk`, `Argon Wk`).
+- **Dynamic Auto-Resizing**: The HUD automatically sizes itself to fit your selected metrics with zero wasted space.
+- **Draggable Anywhere**: Click and drag smoothly anywhere across multi-monitor setups.
+- **Apple-Style Status Pills**: Color-coded badges (Mint Green > 50%, Amber Orange 20–50%, Coral Red < 20%).
+- **Developer Controls**: Right-click context menu with Opacity levels (`100%`, `95%`, `80%`, `60%`) and **Always on Top** toggle.
+
+### 2. 📊 Full Dashboard Flyout
+- **Apple Control Center Aesthetic**: Frosted Dark Slate surface with Windows 11 DWM rounded corners.
+- **Detailed Group Cards**: Visual capsule progress bars, countdown reset timers (`Resets in 3h 22m`), and percentage badges.
+- **Interactive Header Controls**:
+  - `═` **Mini HUD**: Switch to the compact horizontal floating bar.
+  - `↻` **Refresh**: 60 FPS vector spinning animation.
+  - `✕` **Close**: Minimize to system tray.
+- **Auto-Refresh Scheduler**: Configurable intervals (5m, 10m, 15m, 30m, 1h, or manual).
+- **Run at Startup**: Native Windows registry integration for automatic background launch.
+
+### 3. 🔔 System Tray (Taskbar)
+- Multi-resolution embedded application icon.
+- Dynamic color tinting based on lowest quota level.
+- Hover tooltip displaying a quick summary of all active quotas.
+
+---
+
+## 🚀 How to Run
+
+1. Open `publish\AntigravityHUD.exe` directly, or
+2. Build from source:
+   ```bash
+   dotnet build
+   dotnet publish -c Release -o publish
+   ```
