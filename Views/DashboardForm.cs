@@ -105,16 +105,19 @@ public class DashboardForm : Form
         };
         _lblLastUpdated.MouseDown += Header_MouseDown;
 
-        // Refresh Pill Button
-        _btnRefresh = new ModernPillButton("↻  Refresh")
+        // Refresh Pill Button with 60 FPS Spin Animation
+        _btnRefresh = new ModernPillButton("Refresh")
         {
-            Font = new Font("Segoe UI Variable Text", 8.5f, FontStyle.Regular),
-            Size = new Size(78, 26),
-            Location = new Point(244, 17),
+            Size = new Size(82, 26),
+            Location = new Point(240, 17),
             BackColor = HeaderBg,
             Cursor = Cursors.Hand
         };
-        _btnRefresh.Click += async (s, e) => await _appContext.RefreshUsageAsync();
+        _btnRefresh.Click += async (s, e) =>
+        {
+            if (!_btnRefresh.IsSpinning)
+                await _appContext.RefreshUsageAsync();
+        };
 
         // Minimalist Close Button
         _btnClose = new CloseCircleButton
@@ -315,8 +318,7 @@ public class DashboardForm : Form
             return;
         }
 
-        _btnRefresh.Enabled = !isRefreshing;
-        _btnRefresh.Text = isRefreshing ? "..." : "↻  Refresh";
+        _btnRefresh.IsSpinning = isRefreshing;
         if (isRefreshing && _contentLayout.Controls.Count == 0)
         {
             _lblStatus.Text = "Querying agy...";
@@ -473,18 +475,61 @@ internal class AppLogoBadge : Control
     }
 }
 
-// Minimalist Modern Pill Button (Clean background erase)
+// Minimalist Modern Pill Button with 60 FPS Spinning Reload Animation
 internal class ModernPillButton : Control
 {
     private bool _isHovered;
+    private bool _isSpinning;
+    private float _rotationAngle;
+    private readonly System.Windows.Forms.Timer _spinTimer;
 
-    public ModernPillButton(string text)
+    public bool IsSpinning
+    {
+        get => _isSpinning;
+        set
+        {
+            if (_isSpinning != value)
+            {
+                _isSpinning = value;
+                if (_isSpinning)
+                {
+                    _spinTimer.Start();
+                }
+                else
+                {
+                    _spinTimer.Stop();
+                    _rotationAngle = 0f;
+                }
+                Invalidate();
+            }
+        }
+    }
+
+    public ModernPillButton(string text = "Refresh")
     {
         Text = text;
         SetStyle(ControlStyles.UserPaint |
                  ControlStyles.AllPaintingInWmPaint |
                  ControlStyles.OptimizedDoubleBuffer, true);
         ForeColor = Color.FromArgb(228, 228, 231);
+        Font = new Font("Segoe UI Variable Text", 8.5f, FontStyle.Regular);
+
+        _spinTimer = new System.Windows.Forms.Timer { Interval = 16 }; // ~60 FPS
+        _spinTimer.Tick += (s, e) =>
+        {
+            _rotationAngle = (_rotationAngle + 12f) % 360f;
+            Invalidate();
+        };
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _spinTimer.Stop();
+            _spinTimer.Dispose();
+        }
+        base.Dispose(disposing);
     }
 
     protected override void OnMouseEnter(EventArgs e)
@@ -510,7 +555,7 @@ internal class ModernPillButton : Control
         g.TextRenderingHint = TextRenderingHint.ClearTypeGridFit;
 
         var rect = new Rectangle(0, 0, Width - 1, Height - 1);
-        Color bg = _isHovered ? Color.FromArgb(55, 55, 62) : Color.FromArgb(39, 39, 44);
+        Color bg = _isHovered && !_isSpinning ? Color.FromArgb(55, 55, 62) : Color.FromArgb(39, 39, 44);
 
         using (var path = GetCapsulePath(rect))
         using (var brush = new SolidBrush(bg))
@@ -520,8 +565,39 @@ internal class ModernPillButton : Control
             g.DrawPath(pen, path);
         }
 
-        TextRenderer.DrawText(g, Text, Font, rect, ForeColor,
-            TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+        // Vector Reload Icon (Spinning or Static)
+        float iconCenterX = 17f;
+        float iconCenterY = Height / 2f;
+        float radius = 4.8f;
+
+        var state = g.Save();
+        g.TranslateTransform(iconCenterX, iconCenterY);
+        g.RotateTransform(_rotationAngle);
+
+        Color iconColor = _isSpinning ? Color.FromArgb(56, 189, 248) : ForeColor;
+        using (var iconPen = new Pen(iconColor, 1.5f))
+        {
+            iconPen.StartCap = LineCap.Round;
+            iconPen.EndCap = LineCap.Round;
+            g.DrawArc(iconPen, -radius, -radius, radius * 2f, radius * 2f, 45, 270);
+
+            // Vector arrowhead
+            using var arrowBrush = new SolidBrush(iconColor);
+            var arrowPoints = new PointF[]
+            {
+                new PointF(-1f, -radius - 2.8f),
+                new PointF(3.2f, -radius),
+                new PointF(-1f, -radius + 2.8f)
+            };
+            g.FillPolygon(arrowBrush, arrowPoints);
+        }
+        g.Restore(state);
+
+        // Label text
+        string labelText = _isSpinning ? "Updating" : "Refresh";
+        var textRect = new Rectangle(27, 0, Width - 29, Height);
+        TextRenderer.DrawText(g, labelText, Font, textRect, ForeColor,
+            TextFormatFlags.Left | TextFormatFlags.VerticalCenter);
     }
 
     private static GraphicsPath GetCapsulePath(Rectangle rect)
