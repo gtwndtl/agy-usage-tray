@@ -231,10 +231,9 @@ public class FloatBarForm : Form
     {
         using var tempBmp = new Bitmap(1, 1);
         using var g = Graphics.FromImage(tempBmp);
+        g.TextRenderingHint = TextRenderingHint.ClearTypeGridFit;
 
-        int contentWidth = MeasureContentWidth(g);
-        int actionWidth = 72; // 3 buttons + spacing
-        int newWidth = Math.Max(180, contentWidth + actionWidth + 16);
+        int requiredWidth = LayoutAndDraw(g, draw: false);
 
         var screen = Screen.FromPoint(Location);
         var workArea = screen.WorkingArea;
@@ -244,65 +243,20 @@ public class FloatBarForm : Form
 
         if (repositionToTopRight)
         {
-            newX = workArea.Right - newWidth - 24;
+            newX = workArea.Right - requiredWidth - 24;
             newY = workArea.Top + 24;
         }
         else
         {
-            // Keep on screen if width expands
-            if (newX + newWidth > workArea.Right - 8)
-                newX = workArea.Right - newWidth - 8;
+            if (newX + requiredWidth > workArea.Right - 8)
+                newX = workArea.Right - requiredWidth - 8;
             if (newX < workArea.Left + 8)
                 newX = workArea.Left + 8;
         }
 
-        Size = new Size(newWidth, 32);
+        Size = new Size(requiredWidth, 32);
         Location = new Point(newX, newY);
         Invalidate();
-    }
-
-    private int MeasureContentWidth(Graphics g)
-    {
-        int w = 12; // Initial left margin
-        bool hasAny = false;
-
-        using var fontTitle = new Font("Segoe UI Variable Display", 8f, FontStyle.Bold);
-        using var fontPill = new Font("Segoe UI Variable Text", 7.5f, FontStyle.Bold);
-
-        // Gemini
-        if (_settings.ShowGemini5h || _settings.ShowGeminiWk)
-        {
-            w += TextRenderer.MeasureText(g, "Gemini", fontTitle, Size.Empty, TextFormatFlags.NoPadding).Width + 6;
-            if (_settings.ShowGemini5h) w += 48;
-            if (_settings.ShowGeminiWk) w += 50;
-            hasAny = true;
-        }
-
-        // Claude
-        if (_settings.ShowClaude5h || _settings.ShowClaudeWk)
-        {
-            if (hasAny) w += 16; // Divider space
-            w += TextRenderer.MeasureText(g, "Claude", fontTitle, Size.Empty, TextFormatFlags.NoPadding).Width + 6;
-            if (_settings.ShowClaude5h) w += 48;
-            if (_settings.ShowClaudeWk) w += 50;
-            hasAny = true;
-        }
-
-        // Argon
-        if (_settings.ShowArgonWk)
-        {
-            if (hasAny) w += 16; // Divider space
-            w += TextRenderer.MeasureText(g, "Argon", fontTitle, Size.Empty, TextFormatFlags.NoPadding).Width + 6;
-            w += 40;
-            hasAny = true;
-        }
-
-        if (!hasAny)
-        {
-            w += TextRenderer.MeasureText(g, "No metrics selected", fontTitle, Size.Empty, TextFormatFlags.NoPadding).Width;
-        }
-
-        return w;
     }
 
     protected override void OnMouseDown(MouseEventArgs e)
@@ -422,115 +376,155 @@ public class FloatBarForm : Form
             g.DrawRectangle(borderPen, 0, 0, Width - 1, Height - 1);
         }
 
+        LayoutAndDraw(g, draw: true);
+    }
+
+    private int LayoutAndDraw(Graphics g, bool draw)
+    {
         int curX = 12;
         int centerY = Height / 2;
         bool hasDrawnAny = false;
 
         using var fontTitle = new Font("Segoe UI Variable Display", 8f, FontStyle.Bold);
 
-        // 1. Gemini
+        // 1. Gemini Group
         if (_settings.ShowGemini5h || _settings.ShowGeminiWk)
         {
             var (gemini5h, geminiWk) = ExtractGroupBuckets("Gemini Models");
-            TextRenderer.DrawText(g, "Gemini", fontTitle, new Point(curX, centerY - 6), Color.FromArgb(228, 228, 231));
-            curX += TextRenderer.MeasureText(g, "Gemini", fontTitle, Size.Empty, TextFormatFlags.NoPadding).Width + 6;
+            var titleSize = TextRenderer.MeasureText(g, "Gemini", fontTitle, Size.Empty, TextFormatFlags.NoPadding);
+            if (draw)
+            {
+                TextRenderer.DrawText(g, "Gemini", fontTitle, new Point(curX, centerY - titleSize.Height / 2), Color.FromArgb(228, 228, 231), TextFormatFlags.NoPadding);
+            }
+            curX += titleSize.Width + 6;
 
             if (_settings.ShowGemini5h)
             {
                 string txt = gemini5h.HasValue ? $"5h {gemini5h.Value:0}%" : "5h -";
-                curX = DrawPill(g, curX, centerY, txt, gemini5h ?? 100);
+                curX = HandlePill(g, curX, centerY, txt, gemini5h ?? 100, draw);
             }
             if (_settings.ShowGeminiWk)
             {
                 string txt = geminiWk.HasValue ? $"Wk {geminiWk.Value:0}%" : "Wk -";
-                curX = DrawPill(g, curX, centerY, txt, geminiWk ?? 100);
+                curX = HandlePill(g, curX, centerY, txt, geminiWk ?? 100, draw);
             }
             hasDrawnAny = true;
         }
 
-        // 2. Claude
+        // 2. Claude Group
         if (_settings.ShowClaude5h || _settings.ShowClaudeWk)
         {
             if (hasDrawnAny)
             {
-                DrawDivider(g, curX + 7);
-                curX += 16;
+                if (draw) DrawDivider(g, curX + 6);
+                curX += 14;
             }
 
             var (claude5h, claudeWk) = ExtractGroupBuckets("Claude");
-            TextRenderer.DrawText(g, "Claude", fontTitle, new Point(curX, centerY - 6), Color.FromArgb(228, 228, 231));
-            curX += TextRenderer.MeasureText(g, "Claude", fontTitle, Size.Empty, TextFormatFlags.NoPadding).Width + 6;
+            var titleSize = TextRenderer.MeasureText(g, "Claude", fontTitle, Size.Empty, TextFormatFlags.NoPadding);
+            if (draw)
+            {
+                TextRenderer.DrawText(g, "Claude", fontTitle, new Point(curX, centerY - titleSize.Height / 2), Color.FromArgb(228, 228, 231), TextFormatFlags.NoPadding);
+            }
+            curX += titleSize.Width + 6;
 
             if (_settings.ShowClaude5h)
             {
                 string txt = claude5h.HasValue ? $"5h {claude5h.Value:0}%" : "5h -";
-                curX = DrawPill(g, curX, centerY, txt, claude5h ?? 100);
+                curX = HandlePill(g, curX, centerY, txt, claude5h ?? 100, draw);
             }
             if (_settings.ShowClaudeWk)
             {
                 string txt = claudeWk.HasValue ? $"Wk {claudeWk.Value:0}%" : "Wk -";
-                curX = DrawPill(g, curX, centerY, txt, claudeWk ?? 100);
+                curX = HandlePill(g, curX, centerY, txt, claudeWk ?? 100, draw);
             }
             hasDrawnAny = true;
         }
 
-        // 3. Argon
+        // 3. Argon Group
         if (_settings.ShowArgonWk)
         {
             if (hasDrawnAny)
             {
-                DrawDivider(g, curX + 7);
-                curX += 16;
+                if (draw) DrawDivider(g, curX + 6);
+                curX += 14;
             }
 
             var (_, argonWk) = ExtractGroupBuckets("Argon");
-            TextRenderer.DrawText(g, "Argon", fontTitle, new Point(curX, centerY - 6), Color.FromArgb(228, 228, 231));
-            curX += TextRenderer.MeasureText(g, "Argon", fontTitle, Size.Empty, TextFormatFlags.NoPadding).Width + 6;
+            var titleSize = TextRenderer.MeasureText(g, "Argon", fontTitle, Size.Empty, TextFormatFlags.NoPadding);
+            if (draw)
+            {
+                TextRenderer.DrawText(g, "Argon", fontTitle, new Point(curX, centerY - titleSize.Height / 2), Color.FromArgb(228, 228, 231), TextFormatFlags.NoPadding);
+            }
+            curX += titleSize.Width + 6;
 
             string txt = argonWk.HasValue ? $"{argonWk.Value:0}%" : "-";
-            curX = DrawPill(g, curX, centerY, txt, argonWk ?? 100);
+            curX = HandlePill(g, curX, centerY, txt, argonWk ?? 100, draw);
             hasDrawnAny = true;
         }
 
         if (!hasDrawnAny)
         {
-            TextRenderer.DrawText(g, "Right click to choose metrics", fontTitle, new Point(curX, centerY - 6), Color.FromArgb(161, 161, 170));
+            var noMetricsSize = TextRenderer.MeasureText(g, "Right click to choose metrics", fontTitle, Size.Empty, TextFormatFlags.NoPadding);
+            if (draw)
+            {
+                TextRenderer.DrawText(g, "Right click to choose metrics", fontTitle, new Point(curX, centerY - noMetricsSize.Height / 2), Color.FromArgb(161, 161, 170), TextFormatFlags.NoPadding);
+            }
+            curX += noMetricsSize.Width + 6;
         }
 
-        // Action Cluster Divider & Buttons
-        int actionDividerX = Width - 74;
-        DrawDivider(g, actionDividerX);
-        DrawActionButtons(g);
+        // Action cluster divider
+        if (draw) DrawDivider(g, curX + 6);
+        curX += 15;
+
+        // Action Buttons
+        int btnSize = 20;
+        int y = (Height - btnSize) / 2;
+
+        _rectRefresh = new Rectangle(curX, y, btnSize, btnSize);
+        _rectExpand = new Rectangle(curX + 22, y, btnSize, btnSize);
+        _rectClose = new Rectangle(curX + 44, y, btnSize, btnSize);
+
+        if (draw)
+        {
+            DrawActionButtons(g);
+        }
+
+        curX += 44 + btnSize + 10; // Right padding
+        return curX;
     }
 
-    private int DrawPill(Graphics g, int x, int centerY, string label, double percentage)
+    private static int HandlePill(Graphics g, int x, int centerY, string label, double percentage, bool draw)
     {
-        Color textColor = percentage > 50 ? Color.FromArgb(48, 209, 88) :   // Mint Green
-                          percentage >= 20 ? Color.FromArgb(255, 159, 10) : // Amber Orange
-                                             Color.FromArgb(255, 69, 58);   // Coral Red
-
-        Color bgTint = Color.FromArgb(32, textColor.R, textColor.G, textColor.B);
-
         using var font = new Font("Segoe UI Variable Text", 7.5f, FontStyle.Bold);
         var size = TextRenderer.MeasureText(g, label, font, Size.Empty, TextFormatFlags.NoPadding);
-        int pillW = size.Width + 10;
+        int pillW = size.Width + 12; // 6px padding on each side
         int pillH = 18;
         int pillY = centerY - (pillH / 2);
 
-        var rect = new Rectangle(x, pillY, pillW, pillH);
-        using (var brush = new SolidBrush(bgTint))
+        if (draw)
         {
-            FillRoundedRectangle(g, brush, rect, 4);
-        }
-        using (var pen = new Pen(Color.FromArgb(55, textColor.R, textColor.G, textColor.B), 1f))
-        {
-            DrawRoundedRectangle(g, pen, rect, 4);
+            Color textColor = percentage > 50 ? Color.FromArgb(48, 209, 88) :   // Mint Green
+                              percentage >= 20 ? Color.FromArgb(255, 159, 10) : // Amber Orange
+                                                 Color.FromArgb(255, 69, 58);   // Coral Red
+
+            Color bgTint = Color.FromArgb(32, textColor.R, textColor.G, textColor.B);
+
+            var rect = new Rectangle(x, pillY, pillW, pillH);
+            using (var brush = new SolidBrush(bgTint))
+            {
+                FillRoundedRectangle(g, brush, rect, 4);
+            }
+            using (var pen = new Pen(Color.FromArgb(55, textColor.R, textColor.G, textColor.B), 1f))
+            {
+                DrawRoundedRectangle(g, pen, rect, 4);
+            }
+
+            TextRenderer.DrawText(g, label, font, rect, textColor,
+                TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPadding);
         }
 
-        TextRenderer.DrawText(g, label, font, rect, textColor,
-            TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPadding);
-
-        return x + pillW + 4;
+        return x + pillW + 5; // 5px gap after pill
     }
 
     private static void DrawDivider(Graphics g, int x)
@@ -541,13 +535,7 @@ public class FloatBarForm : Form
 
     private void DrawActionButtons(Graphics g)
     {
-        int y = (Height - 20) / 2;
         int btnSize = 20;
-        int startX = Width - 68;
-
-        _rectRefresh = new Rectangle(startX, y, btnSize, btnSize);
-        _rectExpand = new Rectangle(startX + 21, y, btnSize, btnSize);
-        _rectClose = new Rectangle(startX + 42, y, btnSize, btnSize);
 
         // 1. Refresh Button
         DrawMiniButton(g, _rectRefresh, 0, () =>
