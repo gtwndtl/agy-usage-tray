@@ -1,0 +1,15 @@
+## Build and Debug Folders
+bin/
+obj/
+publish/
+*.log
+
+## Visual Studio / VS Code
+.vs/
+.vscode/
+*.user
+*.suo
+
+## OS generated
+.DS_Store
+Thumbs.db
