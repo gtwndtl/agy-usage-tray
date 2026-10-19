@@ -234,7 +234,7 @@ public class FloatBarForm : Form
         var screen = Screen.PrimaryScreen ?? Screen.FromPoint(Location);
         var workArea = screen.WorkingArea;
         int newX = workArea.Left + (workArea.Width - Width) / 2;
-        int newY = workArea.Top + 16;
+        int newY = workArea.Top;
         Location = new Point(newX, newY);
     }
 
@@ -263,7 +263,7 @@ public class FloatBarForm : Form
         if (repositionToTopCenter)
         {
             newX = workArea.Left + (workArea.Width - requiredWidth) / 2;
-            newY = workArea.Top + 16;
+            newY = workArea.Top;
         }
         else
         {
