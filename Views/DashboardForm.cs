@@ -150,9 +150,9 @@ public class DashboardForm : Form
             InitialDelay = 350,
             ReshowDelay = 150
         };
-        headerToolTip.SetToolTip(_btnFloatBar, "Switch to Compact Floating HUD Bar");
-        headerToolTip.SetToolTip(_btnRefresh, "Refresh Quota");
-        headerToolTip.SetToolTip(_btnClose, "Close to Tray");
+        headerToolTip.SetToolTip(_btnFloatBar, "Mini HUD");
+        headerToolTip.SetToolTip(_btnRefresh, "Refresh");
+        headerToolTip.SetToolTip(_btnClose, "Close");
 
         _headerPanel.Controls.Add(iconBadge);
         _headerPanel.Controls.Add(_lblTitle);
