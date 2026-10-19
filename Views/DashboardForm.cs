@@ -117,7 +117,7 @@ public class DashboardForm : Form
         };
         _btnFloatBar.Click += (s, e) =>
         {
-            _appContext.ShowFloatBar();
+            _appContext.ShowFloatBar(centerAtTop: true);
             Hide();
         };
 

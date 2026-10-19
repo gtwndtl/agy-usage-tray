@@ -37,6 +37,7 @@ public class FloatBarForm : Form
     private Rectangle _rectRefresh;
     private Rectangle _rectExpand;
     private Rectangle _rectClose;
+    private bool _hasCustomPosition;
 
     public FloatBarForm(AppContext appContext)
     {
@@ -87,8 +88,8 @@ public class FloatBarForm : Form
         };
         BuildContextMenu();
 
-        // Initial sizing & screen positioning
-        RecalculateLayout(repositionToTopRight: true);
+        // Initial sizing & screen positioning (centered horizontally at top)
+        RecalculateLayout(repositionToTopCenter: true);
     }
 
     private void ApplyNativeWindows11Styling()
@@ -167,7 +168,7 @@ public class FloatBarForm : Form
             item.Checked = !item.Checked;
             onChange(item.Checked);
             _settings.Save();
-            RecalculateLayout(repositionToTopRight: false);
+            RecalculateLayout(false);
         };
         parent.DropDownItems.Add(item);
     }
@@ -206,7 +207,7 @@ public class FloatBarForm : Form
         }
 
         _latestData = data;
-        RecalculateLayout(repositionToTopRight: false);
+        RecalculateLayout(false);
     }
 
     public void SetRefreshing(bool isRefreshing)
@@ -228,7 +229,24 @@ public class FloatBarForm : Form
         Invalidate(_rectRefresh);
     }
 
-    private void RecalculateLayout(bool repositionToTopRight)
+    public void CenterAtTop()
+    {
+        var screen = Screen.PrimaryScreen ?? Screen.FromPoint(Location);
+        var workArea = screen.WorkingArea;
+        int newX = workArea.Left + (workArea.Width - Width) / 2;
+        int newY = workArea.Top + 16;
+        Location = new Point(newX, newY);
+    }
+
+    public void EnsureDefaultPosition()
+    {
+        if (!_hasCustomPosition)
+        {
+            CenterAtTop();
+        }
+    }
+
+    private void RecalculateLayout(bool repositionToTopCenter = false)
     {
         using var tempBmp = new Bitmap(1, 1);
         using var g = Graphics.FromImage(tempBmp);
@@ -242,10 +260,10 @@ public class FloatBarForm : Form
         int newX = Location.X;
         int newY = Location.Y;
 
-        if (repositionToTopRight)
+        if (repositionToTopCenter)
         {
-            newX = workArea.Right - requiredWidth - 24;
-            newY = workArea.Top + 24;
+            newX = workArea.Left + (workArea.Width - requiredWidth) / 2;
+            newY = workArea.Top + 16;
         }
         else
         {
@@ -284,6 +302,7 @@ public class FloatBarForm : Form
             }
 
             // Drag window anywhere else
+            _hasCustomPosition = true;
             ReleaseCapture();
             SendMessage(Handle, WM_NCLBUTTONDOWN, (IntPtr)HTCAPTION, IntPtr.Zero);
         }

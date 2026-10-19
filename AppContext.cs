@@ -19,6 +19,7 @@ public class AppContext : ApplicationContext
 
     public AppContext()
     {
+        StartupService.MigrateLegacyKeys();
         _cliService = new AgyCliService();
         _dashboard = new DashboardForm(this);
         _floatBar = new FloatBarForm(this);
@@ -102,6 +103,9 @@ public class AppContext : ApplicationContext
 
         // Initial fetch
         _ = RefreshUsageAsync();
+
+        // Automatically open Dashboard on launch
+        ShowDashboard();
     }
 
     private void AddIntervalSubMenu(ToolStripMenuItem parent)
@@ -160,8 +164,13 @@ public class AppContext : ApplicationContext
         _dashboard.Activate();
     }
 
-    public void ShowFloatBar()
+    public void ShowFloatBar(bool centerAtTop = false)
     {
+        if (centerAtTop)
+            _floatBar.CenterAtTop();
+        else
+            _floatBar.EnsureDefaultPosition();
+
         _floatBar.Show();
         _floatBar.BringToFront();
     }
@@ -177,6 +186,7 @@ public class AppContext : ApplicationContext
             _floatBar.Hide();
         else
         {
+            _floatBar.EnsureDefaultPosition();
             _floatBar.Show();
             _floatBar.BringToFront();
         }
