@@ -32,6 +32,7 @@ public class DashboardForm : Form
     private readonly AppContext _appContext;
     private readonly Label _lblTitle;
     private readonly Label _lblLastUpdated;
+    private readonly MiniBarCircleButton _btnFloatBar;
     private readonly RefreshCircleButton _btnRefresh;
     private readonly CloseCircleButton _btnClose;
     private readonly DoubleBufferedPanel _headerPanel;
@@ -105,6 +106,20 @@ public class DashboardForm : Form
         };
         _lblLastUpdated.MouseDown += Header_MouseDown;
 
+        // Floating HUD Mini Bar Button (Icon-only, 26x26)
+        _btnFloatBar = new MiniBarCircleButton
+        {
+            Size = new Size(26, 26),
+            Location = new Point(264, 17),
+            BackColor = HeaderBg,
+            Cursor = Cursors.Hand
+        };
+        _btnFloatBar.Click += (s, e) =>
+        {
+            _appContext.ShowFloatBar();
+            Hide();
+        };
+
         // Refresh Circle Button (Icon-only with 60 FPS Spin Animation, 26x26)
         _btnRefresh = new RefreshCircleButton
         {
@@ -129,9 +144,20 @@ public class DashboardForm : Form
         };
         _btnClose.Click += (s, e) => Hide();
 
+        // Header Action ToolTips
+        var headerToolTip = new ToolTip
+        {
+            InitialDelay = 350,
+            ReshowDelay = 150
+        };
+        headerToolTip.SetToolTip(_btnFloatBar, "Switch to Compact Floating HUD Bar");
+        headerToolTip.SetToolTip(_btnRefresh, "Refresh Quota");
+        headerToolTip.SetToolTip(_btnClose, "Close to Tray");
+
         _headerPanel.Controls.Add(iconBadge);
         _headerPanel.Controls.Add(_lblTitle);
         _headerPanel.Controls.Add(_lblLastUpdated);
+        _headerPanel.Controls.Add(_btnFloatBar);
         _headerPanel.Controls.Add(_btnRefresh);
         _headerPanel.Controls.Add(_btnClose);
 
@@ -640,6 +666,67 @@ internal class CloseCircleButton : Control
         int span = 4;
         g.DrawLine(pen, cx - span, cy - span, cx + span, cy + span);
         g.DrawLine(pen, cx - span, cy + span, cx + span, cy - span);
+    }
+}
+
+// Floating HUD Mini Bar Button (26x26, Clean background erase)
+internal class MiniBarCircleButton : Control
+{
+    private bool _isHovered;
+
+    public MiniBarCircleButton()
+    {
+        SetStyle(ControlStyles.UserPaint |
+                 ControlStyles.AllPaintingInWmPaint |
+                 ControlStyles.OptimizedDoubleBuffer, true);
+    }
+
+    protected override void OnMouseEnter(EventArgs e)
+    {
+        base.OnMouseEnter(e);
+        _isHovered = true;
+        Invalidate();
+    }
+
+    protected override void OnMouseLeave(EventArgs e)
+    {
+        base.OnMouseLeave(e);
+        _isHovered = false;
+        Invalidate();
+    }
+
+    protected override void OnPaint(PaintEventArgs e)
+    {
+        base.OnPaint(e);
+        var g = e.Graphics;
+        g.Clear(Parent?.BackColor ?? BackColor);
+        g.SmoothingMode = SmoothingMode.AntiAlias;
+
+        var rect = new Rectangle(0, 0, Width - 1, Height - 1);
+
+        if (_isHovered)
+        {
+            using var bgBrush = new SolidBrush(Color.FromArgb(63, 63, 70));
+            g.FillEllipse(bgBrush, rect);
+        }
+
+        Color glyphColor = _isHovered ? Color.White : Color.FromArgb(161, 161, 170);
+        using var pen = new Pen(glyphColor, 1.4f);
+
+        // Draw horizontal floating bar icon (minimal capsule with split preview)
+        int cx = Width / 2;
+        int cy = Height / 2;
+        var barRect = new Rectangle(cx - 7, cy - 4, 14, 8);
+        using (var fillBrush = new SolidBrush(Color.FromArgb(42, 42, 48)))
+        {
+            g.FillRoundedRectangle(fillBrush, barRect, 2);
+        }
+        g.DrawRoundedRectangle(pen, barRect, 2);
+
+        // Inner mini indicator
+        using var dotBrush = new SolidBrush(glyphColor);
+        g.FillRectangle(dotBrush, cx - 4, cy - 1, 3, 2);
+        g.FillRectangle(dotBrush, cx, cy - 1, 3, 2);
     }
 }
 

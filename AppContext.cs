@@ -11,6 +11,8 @@ public class AppContext : ApplicationContext
     private readonly ContextMenuStrip _trayMenu;
     private readonly AgyCliService _cliService;
     private readonly DashboardForm _dashboard;
+    private readonly FloatBarForm _floatBar;
+    private readonly ToolStripMenuItem _itemFloatBar;
     private readonly System.Windows.Forms.Timer _refreshTimer;
     private bool _isRefreshing;
     private int _intervalMinutes = 10;
@@ -19,6 +21,7 @@ public class AppContext : ApplicationContext
     {
         _cliService = new AgyCliService();
         _dashboard = new DashboardForm(this);
+        _floatBar = new FloatBarForm(this);
 
         // Build Tray Menu
         _trayMenu = new ContextMenuStrip
@@ -32,6 +35,9 @@ public class AppContext : ApplicationContext
 
         var itemOpen = new ToolStripMenuItem("📊 Open Dashboard") { Font = new Font("Segoe UI", 9f, FontStyle.Bold) };
         itemOpen.Click += (s, e) => _dashboard.ToggleVisibility();
+
+        _itemFloatBar = new ToolStripMenuItem("📌 Floating Mini Bar (HUD)");
+        _itemFloatBar.Click += (s, e) => ToggleFloatBar();
 
         var itemRefresh = new ToolStripMenuItem("↻ Refresh Now");
         itemRefresh.Click += async (s, e) => await RefreshUsageAsync();
@@ -55,7 +61,13 @@ public class AppContext : ApplicationContext
         var itemExit = new ToolStripMenuItem("✕ Exit");
         itemExit.Click += (s, e) => ExitApp();
 
+        _trayMenu.Opening += (s, e) =>
+        {
+            _itemFloatBar.Checked = _floatBar.Visible;
+        };
+
         _trayMenu.Items.Add(itemOpen);
+        _trayMenu.Items.Add(_itemFloatBar);
         _trayMenu.Items.Add(itemRefresh);
         _trayMenu.Items.Add(new ToolStripSeparator());
         _trayMenu.Items.Add(itemInterval);
@@ -141,22 +153,54 @@ public class AppContext : ApplicationContext
         }
     }
 
+    public void ShowDashboard()
+    {
+        _dashboard.Show();
+        _dashboard.BringToFront();
+        _dashboard.Activate();
+    }
+
+    public void ShowFloatBar()
+    {
+        _floatBar.Show();
+        _floatBar.BringToFront();
+    }
+
+    public void HideFloatBar()
+    {
+        _floatBar.Hide();
+    }
+
+    public void ToggleFloatBar()
+    {
+        if (_floatBar.Visible)
+            _floatBar.Hide();
+        else
+        {
+            _floatBar.Show();
+            _floatBar.BringToFront();
+        }
+    }
+
     public async Task RefreshUsageAsync()
     {
         if (_isRefreshing) return;
         _isRefreshing = true;
         _dashboard.SetRefreshing(true);
+        _floatBar.SetRefreshing(true);
 
         try
         {
             var (data, error) = await _cliService.FetchUsageAsync();
             _dashboard.UpdateData(data, error);
+            _floatBar.UpdateData(data);
             UpdateTray(data, error);
         }
         finally
         {
             _isRefreshing = false;
             _dashboard.SetRefreshing(false);
+            _floatBar.SetRefreshing(false);
         }
     }
 
@@ -293,6 +337,7 @@ public class AppContext : ApplicationContext
         _trayIcon.Visible = false;
         _trayIcon.Dispose();
         _dashboard.Dispose();
+        _floatBar.Dispose();
         Application.Exit();
     }
 }
