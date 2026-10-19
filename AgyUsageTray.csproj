@@ -7,12 +7,16 @@
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
     <NoWarn>$(NoWarn);WFO1000</NoWarn>
+    <ApplicationIcon>app.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Remove="AgyUsageTray.Tests\**" />
     <EmbeddedResource Remove="AgyUsageTray.Tests\**" />
     <None Remove="AgyUsageTray.Tests\**" />
+    <None Update="app.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>
