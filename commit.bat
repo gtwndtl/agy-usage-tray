@@ -6,6 +6,7 @@ echo ========================================================
 echo.
 echo [1/5] Stopping running AntigravityHUD process...
 taskkill /f /im AntigravityHUD.exe 2>nul
+taskkill /f /im AgyUsageTray.exe 2>nul
 timeout /t 1 /nobreak >nul
 
 echo.
@@ -25,9 +26,11 @@ echo [5/5] Building standalone Release executable...
 dotnet publish -c Release -o publish
 
 if %ERRORLEVEL% equ 0 (
+    echo [OK] Build successful!
+    copy /y "%~dp0publish\AntigravityHUD.exe" "%~dp0publish\AgyUsageTray.exe" >nul
     echo.
     echo ========================================================
-    echo  [OK] Build successful! Restarting Antigravity HUD...
+    echo  Restarting Antigravity HUD...
     echo ========================================================
     start "" "%~dp0publish\AntigravityHUD.exe"
     echo Antigravity HUD is now running in system tray!
