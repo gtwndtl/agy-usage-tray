@@ -90,40 +90,12 @@ public class AgyCliService
             bool isScript = agyPath.EndsWith(".cmd", StringComparison.OrdinalIgnoreCase) ||
                             agyPath.EndsWith(".bat", StringComparison.OrdinalIgnoreCase);
 
-            var systemDir = Environment.GetFolderPath(Environment.SpecialFolder.System);
-            var conhost = Path.Combine(systemDir, "conhost.exe");
+            var targetFile = isScript ? "cmd.exe" : agyPath;
+            var targetArgs = isScript
+                ? $"/c \"\"{agyPath}\" --output-format json -p \"/usage\"\""
+                : "--output-format json -p \"/usage\"";
 
-            string targetCmd = isScript
-                ? $"cmd.exe /c \"\"{agyPath}\" --output-format json -p \"/usage\"\""
-                : $"\"{agyPath}\" --output-format json -p \"/usage\"";
-
-            string stdout = string.Empty;
-            string stderr = string.Empty;
-            int exitCode = -1;
-
-            // 1. Try via headless conhost (bypasses Windows 11 Windows Terminal handoff completely)
-            if (File.Exists(conhost))
-            {
-                try
-                {
-                    (stdout, stderr, exitCode) = await RunProcessAsync(conhost, $"--headless {targetCmd}", cancellationToken);
-                }
-                catch
-                {
-                    stdout = string.Empty;
-                }
-            }
-
-            // 2. Fallback to direct execution if conhost is absent or failed
-            if (string.IsNullOrWhiteSpace(stdout) || stdout.IndexOf('{') < 0)
-            {
-                var directFile = isScript ? "cmd.exe" : agyPath;
-                var directArgs = isScript
-                    ? $"/c \"\"{agyPath}\" --output-format json -p \"/usage\"\""
-                    : "--output-format json -p \"/usage\"";
-
-                (stdout, stderr, exitCode) = await RunProcessAsync(directFile, directArgs, cancellationToken);
-            }
+            var (stdout, stderr, exitCode) = await RunProcessAsync(targetFile, targetArgs, cancellationToken);
 
             if (exitCode != 0 && string.IsNullOrWhiteSpace(stdout))
             {
@@ -135,13 +107,17 @@ public class AgyCliService
                 return (null, "Received empty response from agy.");
             }
 
-            // Find JSON start if there are warning banners
-            var jsonStart = stdout.IndexOf('{');
-            if (jsonStart < 0)
+            // Strip ANSI escape sequences (e.g. 0x1B codes emitted by terminal)
+            var cleanStdout = System.Text.RegularExpressions.Regex.Replace(stdout, @"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])", "");
+
+            // Extract exact JSON object between first '{' and last '}'
+            var jsonStart = cleanStdout.IndexOf('{');
+            var jsonEnd = cleanStdout.LastIndexOf('}');
+            if (jsonStart < 0 || jsonEnd <= jsonStart)
             {
-                return (null, $"Unexpected non-JSON output: {stdout.Trim()}");
+                return (null, $"Unexpected non-JSON output: {cleanStdout.Trim()}");
             }
-            var json = stdout[jsonStart..].Trim();
+            var json = cleanStdout.Substring(jsonStart, jsonEnd - jsonStart + 1).Trim();
 
             var result = JsonSerializer.Deserialize<AgyUsageRoot>(json, JsonOptions);
             if (result == null || result.Command?.Data == null)

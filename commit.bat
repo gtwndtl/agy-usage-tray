@@ -10,11 +10,11 @@ timeout /t 1 /nobreak >nul
 
 echo.
 echo [2/5] Staging modified files...
-git add Services/AgyCliService.cs commit.bat
+git add Program.cs Services/AgyCliService.cs commit.bat
 
 echo.
 echo [3/5] Committing fix...
-git commit -m "fix(cli): eliminate Windows 11 terminal flash using headless conhost"
+git commit -m "fix(cli): prevent terminal popups via hidden console inheritance and clean JSON parsing"
 
 echo.
 echo [4/5] Pushing to GitHub (gtwndtl/agy-usage-tray)...
